@@ -1,4 +1,4 @@
-function [G, XCoords, YCoords] = tvg_tver(N,varargin1,varargin2,varargin3)
+function [G, XCoords, YCoords] = tvg_tver(N, seed, varargin1,varargin2,varargin3)
 % Erdos-Renyi random graph with temporal homogeneity
 
 % Time-Varying Graph Learning
@@ -10,7 +10,7 @@ function [G, XCoords, YCoords] = tvg_tver(N,varargin1,varargin2,varargin3)
 % varargin2 num of time slots
 % varargin3 portion of resampling
 max_attempt = 10;
-rng(30);
+rng(seed);
 G = cell(varargin2,1);
 
 %% generate coordinates of vertices

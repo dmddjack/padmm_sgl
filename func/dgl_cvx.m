@@ -1,4 +1,4 @@
-function [W] = dgl_cvx(X, alpha, beta, gamma, delta, T)
+function [W, w] = dgl_cvx(X, alpha, beta, gamma, delta, T)
 
 % min_{w,v} 2*v'*w + beta*w'*w - alpha*ones'*log(v_1)+ gamma*|v_2|_{l1}
 % s.t.      Q_dw-v=0, w>=0
@@ -59,7 +59,7 @@ variable w(tp)
 minimize (d'*w + alpha*(norm(w,1)) + beta*(square_pos(norm(w)) + square_pos(norm(B_1*w))) + gamma*norm(B_2 * w, 1))
 
 subject to
-    B_3*w == delta;
+    B_3*w == delta * ones(T,1);
 
 cvx_end
 

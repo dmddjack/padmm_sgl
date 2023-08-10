@@ -1,6 +1,6 @@
-function [X_noisy, L] = generate_graph_signals(N,A,DIM)
+function [X_noisy, L] = generate_graph_signals(N,A,DIM,seed)
 % generate noisy signal
-rng(30);
+rng(seed);
 NUM = N;
 Ap =  A.*(A>0);
 Dp = diag(sum(full(Ap)));

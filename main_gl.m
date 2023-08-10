@@ -73,6 +73,8 @@ L0 = Lp - Ln;
 noise = randn(size(X));
 X_noisy = X + 0.1 * noise / norm(noise) * norm(X);
 
+file_name = sprintf("X_s_%d.csv", seed);
+writematrix(X_noisy,file_name);
 
 
 Z = zeros(DIM,DIM);
@@ -81,35 +83,29 @@ for i = 1 : DIM
        Z(i,j) = norm(X_noisy(i,:)-X_noisy(j,:),2)^2;
     end
 end
-disp(0.5 * sum(sum(Z.*A)));
+% disp(0.5 * sum(sum(Z.*A)));
 
 %% common parameters
-alphap = 160;
-betap = 180;
-alphan = 1;
-betan = 1.5;
-
-
-alpha = 1.8 % 1.8;
-beta = 1 % 3;
-gamma = -4.2 % -1.5;
-max_iter = 1000;
+alpha = 1.8; % 1.8;
+beta = 1; % 3;
+delta = -4.5; % -1.5;
+max_iter = 1e3;
 epsilon = 1e-10;
 
 %% obtain optimal solution via ADMM solver
-% fprintf('solving...\n');
-% t = 10;
-% tau1 = 1e-4;
-% tau2 = 1e-4;
-% tic
-% [W_opt] = gl_admm_solver(X_noisy, alpha, beta, t, tau1, tau2, 1e6, 1e-14);
-% fprintf('solved!\n');
-% toc
+fprintf('solving...\n');
+rho = 1;
+tau1 = 1e-4;
+tau2 = 1e-4;
+tic
+[W_opt] = gl_admm_solver(X_noisy, alpha, beta, delta, rho, tau1, tau2, 1e6, 1e-15);
+fprintf('solved!\n');
+toc
 % load('W_opt.mat')
 
 % %% CVX
 tic
-[W_cvx, ~] = gl_cvx(X_noisy, alpha, beta, gamma); % run algorithm
+[W_cvx, ~] = gl_cvx(X_noisy, alpha, beta, delta); % run algorithm
 % [W_cvx, ~] = gl_cvx(X_noisy, alphap, alphan, betap, betan); % run algorithm
 cvx_time = toc;
 % S = (W_cvx>0.75)|(W_cvx<-0.75);
@@ -134,17 +130,16 @@ disp(density_n);
 % [precision_pds, recall_pds, Fmeasure_pds, NMI_pds, num_of_edges_pds] = graph_learning_perf_eval(L0,L_pds);
 
 %% ADMM
-% t = 50;
-% tau1 = 0.0005;
-% tau2 = 0.02;
-% tic
-% [W_admm, fval_admm, primal_gap_iter_admm] = gl_admm(X_noisy, alpha, beta, t, tau1, tau2, max_iter, epsilon, W_opt);
-% admm_time = toc;
-% D = diag(sum(full(W_admm)));
-% L_admm = D-full(W_admm);
-% L_admm(abs(L_admm)<10^(-4))=0;
-% [precision_admm, recall_admm, Fmeasure_admm, NMI_admm, num_of_edges_admm] = graph_learning_perf_eval(L0,L_admm);
-
+rho = .1;
+tau1 = 50e-3;
+tau2 = 10;
+tic
+[W_admm, fval_admm, primal_gap_iter_admm] = gl_admm_1(X_noisy, alpha, beta, delta, rho, tau1, tau2, max_iter, epsilon, W_opt);
+admm_time = toc;
+D = diag(sum(full(W_admm)));
+L_admm = D-full(W_admm);
+L_admm(abs(L_admm)<10^(-4))=0;
+[precision_admm_p,recall_admm_p,f_admm_p,precision_admm_n,recall_admm_n,f_admm_n,~] = graph_learning_perf_eval(L0,L_admm);
 %% FDPG
 % reset = 50;
 % tic
@@ -173,7 +168,7 @@ disp(density_n);
 fprintf('alpha=%.2f, beta=%.2f\n', alpha, beta);
 fprintf('----- CVX  Time needed is %f -----\n', cvx_time);
 % fprintf('----- PDS  Time needed is %f -----\n', stat_pds.time);
-% fprintf('----- ADMM Time needed is %f -----\n', admm_time);
+fprintf('----- ADMM Time needed is %f -----\n', admm_time);
 % fprintf('----- FDPG Time needed is %f -----\n', fdpg_time);
 % fprintf('----- MM Time needed is %f -----\n', mm_time);
 
@@ -184,9 +179,10 @@ fprintf('CVX measurements  | precision_cvx_p=%f,recall_cvx_p=%f,f_cvx_p=%f\n    
 % fprintf('PDS               | fval_pds=%f \n', fval_pds);
 % fprintf('PDS measurements  | Fmeasure_pds=%f, precision_pds=%f, recall_pds=%f, NMI_pds=%.4f\n\n', Fmeasure_pds, precision_pds, recall_pds, NMI_pds);
 % 
-% fprintf('ADMM              | fval_admm=%f, t=%f, tau1=%f, tau2=%f, max_iter=%d\n', fval_admm(end), t, tau1, tau2, max_iter);
-% fprintf('ADMM measurements | Fmeasure_admm=%f, precision_admm=%f, recall_admm=%f, NMI_admm=%.4f\n\n', Fmeasure_admm, precision_admm, recall_admm, NMI_admm);
-% 
+fprintf('ADMM               | fval_admm=%f\n', fval_admm(end));
+fprintf('ADMM measurements  | precision_admm_p=%f,recall_admm_p=%f,f_admm_p=%f\n                  | precision_admm_n=%f,recall_admm_n=%f,f_admm_n=%f\n                  | f_admm=%f\n\n' ...
+    ,precision_admm_p,recall_admm_p,f_admm_p,precision_admm_n,recall_admm_n,f_admm_n,0.5*(f_admm_p+f_admm_n));
+
 % fprintf('FDPG              | fval_fdpg=%f, max_iter=%d\n', fval_fdpg(end), max_iter);
 % fprintf('FDPG measurements | Fmeasure_fdpg=%f, precision_fdpg=%f, recall_fdpg=%f, NMI_fdpg=%.4f\n\n', Fmeasure_fdpg, precision_fdpg, recall_fdpg, NMI_fdpg);
 % 
@@ -195,8 +191,8 @@ fprintf('CVX measurements  | precision_cvx_p=%f,recall_cvx_p=%f,f_cvx_p=%f\n    
        
 % fprintf('num of edges: %f, %f, %f, %f\n\n', num_of_edges_pds, num_of_edges_admm, num_of_edges_fdpg, num_of_edges_mm)
 %% figures
-% figure;
-% semilogy(primal_gap_iter_admm,'-r','LineWidth',1.5);
+figure;
+semilogy(primal_gap_iter_admm,'-r','LineWidth',1.5);
 % hold on;
 % semilogy(primal_gap_iter_pds,'-b','LineWidth',1.5,'LineStyle',"--");
 % hold on;

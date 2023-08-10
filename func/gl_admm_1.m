@@ -1,9 +1,9 @@
 function [W, fval_admm, primal_gap_iter] = gl_admm(X, alpha, beta, delta, rho, tau1, tau2, max_iter, epsilon, W_opt)
 
 
-% min_{w,v} d'*w + beta*w'*w + alpha*||v1||_1 + beta*v2'*v2
+% min_{w,v} d'*w + beta*w'*w + alpha*||w||_1 + beta*v'*v
 % s.t.      [S;B]w-[v;delta]=0
-% v = [v1;v2]
+% 
 %% initialization
 DIM = size(X,1);
 DIMw = DIM*(DIM-1)/2;
@@ -18,16 +18,16 @@ d = squareform(D)';
 w_opt =  squareform(W_opt)';
 
 % z = z/size(X,2); %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-[S, ~] = sum_squareform(DIM);
-S = [eye(DIMw);S];
-St = S';
+[S, St] = sum_squareform(DIM);
+% S = [eye(DIMw);S];
+% St = S';
 d = d / norm(d) * 100;
 %% iterations
 %w = randn(DIMw,1);
 w = ones(DIMw,1); %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-v = randn(DIMw+DIM,1);
+v = randn(DIM,1);
 one = ones(DIMw,1);
-y = randn(DIMw+DIM+1,1);
+y = randn(DIM+1,1);
 C = [S;one'];
 Ct = C';
 
@@ -42,20 +42,21 @@ for k = 1 : max_iter
     % update w
     
     p = w - tau1*rho*Ct*(C*w - [v;delta] - y/rho);
-    w = (p-tau1*d)/(2*tau1*beta+1);
+    % w = (p-tau1*d)/(2*tau1*beta+1);
+    w = sign(p-tau1*d).*(max(abs(p-tau1*d)-tau1*alpha,0))/(2*tau1*beta+1);
     
     % update v
     v_tmp = v;
     Sw = S*w;
-    y1 = y(1:DIMw+DIM);
+    y1 = y(1:DIM);
     
     q = (1-tau2*rho)*v + tau2*rho*Sw - tau2*y1;
-    v1_tmp = q(1:DIMw);
-    v2_tmp = q(DIMw+1:DIMw+DIM);
-    v1 = sign(v1_tmp).*(max(abs(v1_tmp)-tau2*alpha,0));
-    v2 = v2_tmp/(2*tau2*beta+1);
-    v = cat(1,v1,v2);
-    
+    % v1_tmp = q(1:DIMw);
+    % v2_tmp = q(DIMw+1:DIMw+DIM);
+    % v1 = ;
+    v = q/(2*tau2*beta+1);
+    % v = cat(1,v1,v2);
+     
     % updata y
     y = y - rho*(C*w - [v;delta]);
     

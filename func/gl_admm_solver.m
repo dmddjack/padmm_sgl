@@ -1,60 +1,74 @@
-function [W] = gl_admm_solver(X, alpha, beta, t, tau1, tau2, max_iter, epsilon)
+function [W] = gl_admm(X, alpha, beta, delta, rho, tau1, tau2, max_iter, epsilon)
 
-% min_{w,d} 2*z'*w - alpha*ones'*log(d) + beta*w'*w
-% s.t.      Sw-d=0, w>=0
 
+% min_{w,v} d'*w + beta*w'*w + alpha*||w||_1 + beta*v'*v
+% s.t.      [S;B]w-[v;delta]=0
+% 
 %% initialization
 DIM = size(X,1);
 DIMw = DIM*(DIM-1)/2;
-Z = zeros(DIM,DIM);
+D = zeros(DIM,DIM);
 for i = 1 : DIM
     for j = 1 : DIM
-       Z(i,j) = norm(X(i,:)-X(j,:),2)^2;
-    end
+       D(i,j) = norm(X(i,:)-X(j,:),2)^2; 
+    end 
 end
-z = squareform(Z)'; % z = linear_operator_mat2vec(Z, DIM);
-[S, St] = sum_squareform(DIM);
+% D = D / norm(D,'fro') * DIM;
+d = squareform(D)';
 
+% z = z/size(X,2); %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+[S, St] = sum_squareform(DIM);
+% S = [eye(DIMw);S];
+% St = S';
+d = d / norm(d) * 100;
 %% iterations
-w = randn(DIMw,1);
-d = randn(DIM,1);
-y = randn(DIM,1);
-primal_gap_iter = zeros(max_iter,1); 
-dual_gap_iter = zeros(max_iter,1);
+%w = randn(DIMw,1);
+w = ones(DIMw,1); %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+v = randn(DIM,1);
+one = ones(DIMw,1);
+y = randn(DIM+1,1);
+C = [S;one'];
+Ct = C';
+
+fval_iter = zeros(max_iter,1);
+primal_res_iter = zeros(max_iter,1);
+dual_res_iter = zeros(max_iter,1);
 
 for k = 1 : max_iter
+    fval_iter(k) = d'*w + beta*(w'*w) + beta*((S*w)'*(S*w)) + alpha*norm(w,1); % commented when comparing runtime
+    
     % update w
-    % p = (w - tau1*(t*St*(S*w-d) + 2*beta*w - St*y + 2*z))/(2*tau1*beta+1);
-    p = (w - tau1*t*St*(S*w-d-y/t)-2*tau1*z)/(2*tau1*beta+1);
-    w = max(p, 0);
     
-    % update d
-    d_tmp = d;
+    p = w - tau1*rho*Ct*(C*w - [v;delta] - y/rho);
+    % w = (p-tau1*d)/(2*tau1*beta+1);
+    w = sign(p-tau1*d).*(max(abs(p-tau1*d)-tau1*alpha,0))/(2*tau1*beta+1);
+    
+    % update v
+    v_tmp = v;
     Sw = S*w;
-    q = (1-tau2*t)*d + tau2*t*Sw - tau2*y;
+    y1 = y(1:DIM);
     
-    d = 0.5 * (q + sqrt(q.^2+4*alpha*tau2));
+    q = (1-tau2*rho)*v + tau2*rho*Sw - tau2*y1;
+    % v1_tmp = q(1:DIMw);
+    % v2_tmp = q(DIMw+1:DIMw+DIM);
+    % v1 = ;
+    v = q/(2*tau2*beta+1);
+    % v = cat(1,v1,v2);
     
     % updata y
-    y = y - t*(Sw - d);
+    y = y - rho*(C*w - [v;delta]);
     
     % suboptimality measurements
-    primal_gap_iter(k) = norm(t*St*(d-d_tmp));
-    dual_gap_iter(k) = norm(Sw-d);
-    % fprintf('%d\n',(primal_gap_iter(k) < epsilon) && (dual_gap_iter(k) < epsilon));
+    primal_res_iter(k) = norm(C*w - [v;delta]);
+    dual_res_iter(k) = norm(rho*St*(v-v_tmp));
+    
+    
     % stopping criterion
-    % fprintf('primal_gap_iter(%d) ',k);
-    % disp(primal_gap_iter(k));
-    % fprintf('dual_gap_iter(%d) ',k);
-    % disp(dual_gap_iter(k));
-    % fprintf('epsilon ');
-    % disp(epsilon);
-    if (primal_gap_iter(k) < epsilon) && (dual_gap_iter(k) < epsilon)
-        fprintf('primal_gap_iter(%d)=%f',k,primal_gap_iter(k));
-        fprintf('dual_gap_iter(%d)=%f',k,dual_gap_iter(k));
+    if (primal_res_iter(k) < epsilon) && (dual_res_iter(k) < epsilon)
+%         fprintf('primal_gap_iter(%d)=%f',k,primal_res_iter(k));
+%         fprintf('dual_gap_iter(%d)=%f',k,dual_res_iter(k));
         break;
     end
 end
-% disp(primal_gap_iter(k))
-% disp(dual_gap_iter(k))
-W  = linear_operator_vec2mat(w, DIM);
+disp(k);
+W = squareform(w);
