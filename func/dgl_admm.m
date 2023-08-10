@@ -143,4 +143,4 @@ end
 density_p = density_p / T;
 density_n = density_n / T;
 similarity = similarity / (T - 1);
-fprintf("density_p = %.4f, density_n = %.4f \nsimilarity = %.4f\n",density_p, density_n, similarity);
+fprintf("density_p = %.4f, density_n = %.4f \nsimilarity_admm = %.4f\n",density_p, density_n, similarity);

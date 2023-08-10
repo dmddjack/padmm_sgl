@@ -84,7 +84,24 @@ tau2 = 2;
 tic
 [W_admm, fval_admm, fval_admm_iter, primal_gap_iter_admm] = dgl_admm(X_noisy, alpha, beta, gamma, delta, rho, tau1, tau2, max_iter, epsilon, w_opt, time_slots);
 admm_time = toc;
-[precision_admm_p,recall_admm_p,f_admm_p,precision_admm_n,recall_admm_n,f_admm_n] = dgl_perf_eval(L0,W_admm, time_slots);
+[precision_admm_p,recall_admm_p,f_admm_p,precision_admm_n,recall_admm_n,f_admm_n] = dgl_perf_eval(L0, W_admm, time_slots);
+
+%% dynSGL %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if pyenv().Version == ""
+    pyenv(Version="C:\Users\dmddj.PRO13\.conda\envs\dynSGL\python.exe",ExecutionMode="OutOfProcess");
+end
+dynSGL_time  = pyrunfile("dynSGL.py",'toc');
+file_name = sprintf("W_dynSGL_%d_%d.csv", time_slots, seed);
+data = readmatrix(file_name);    
+W_dynSGL = cell(time_slots,1);
+for t=1:time_slots
+    W_dynSGL{t} = data(:,1+(t-1)*DIM:t*DIM);
+    % w_t = squareform(W_dynSGL{t});
+    % density_t = nnz(w_t)/max(size(w_t));
+    % disp(density_t)
+end
+[precision_dynSGL_p,recall_dynSGL_p,f_dynSGL_p,precision_dynSGL_n,recall_dynSGL_n,f_dynSGL_n] = dgl_perf_eval(L0, W_dynSGL, time_slots);
+
 
 %% primal-dual %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % params.maxit = max_iter;
@@ -125,6 +142,11 @@ fprintf('alpha=%.3f, beta=%.3f, gamma=%.3f, delta=%.3f\n', alpha, beta, gamma, d
 % % fprintf('CVX               | fval_cvx=%f\n', fval_cvx);
 % fprintf('CVX measurements  | precision_cvx_p=%f,recall_cvx_p=%f,f_cvx_p=%f\n                  | precision_cvx_n=%f,recall_cvx_n=%f,f_cvx_n=%f\n                  | f_cvx=%f\n\n' ...
 %     ,precision_cvx_p,recall_cvx_p,f_cvx_p,precision_cvx_n,recall_cvx_n,f_cvx_n,0.5*(f_cvx_p+f_cvx_n));
+fprintf('----- dynSGL Time needed is %f -----\n', dynSGL_time);
+% fprintf('dynSGL | fval_dynSGL=%f, t=%f, tau1=%f, tau2=%f, max_iter=%d\n', fval_dynSGL, rho, tau1, tau2, max_iter);
+fprintf('dynSGL measurements  | precision_dynSGL_p=%f,recall_dynSGL_p=%f,f_dynSGL_p=%f\n                  | precision_dynSGL_n=%f,recall_dynSGL_n=%f,f_dynSGL_n=%f\n                  | f_dynSGL=%f\n\n' ...
+    ,precision_dynSGL_p,recall_dynSGL_p,f_dynSGL_p,precision_dynSGL_n,recall_dynSGL_n,f_dynSGL_n,0.5*(f_dynSGL_p+f_dynSGL_n));
+
 fprintf('----- ADMM Time needed is %f -----\n', admm_time);
 fprintf('ADMM | fval_admm=%f, t=%f, tau1=%f, tau2=%f, max_iter=%d\n', fval_admm, rho, tau1, tau2, max_iter);
 fprintf('ADMM measurements  | precision_admm_p=%f,recall_admm_p=%f,f_admm_p=%f\n                  | precision_admm_n=%f,recall_admm_n=%f,f_admm_n=%f\n                  | f_admm=%f\n\n' ...
