@@ -2,9 +2,21 @@ from dynamic_signed import learn_a_dynamic_signed_graph
 import pandas as pd
 import numpy as np
 from time import time
+import sys, getopt
 
 if __name__ == "__main__":
-    df = pd.read_csv("X_d_10_30.csv", header=None)
+    seed = None
+    time_slots = None
+    opts, args = getopt.getopt(sys.argv[1:], "s:t:")
+    for opt, arg in opts:
+        if opt == '-s':
+            seed = int(arg)
+        if opt == '-t':
+            time_slots = int(arg)
+    if seed is None or time_slots is None:
+        raise IOError
+
+    df = pd.read_csv("X_d_{}_{}.csv".format(time_slots, seed), header=None)
     T = 10
     X_noisy = np.array(df)
     DIM, NUM = X_noisy.shape
@@ -16,10 +28,10 @@ if __name__ == "__main__":
         X.append(X_noisy[:, i * NUM:(i + 1) * NUM])
         # print(X[i].shape)
 
-    _, params = learn_a_dynamic_signed_graph(X, 0.12, 0.85)
+    _, params = learn_a_dynamic_signed_graph(X, 0.10, 0.75)
 
     tic = time()
-    w, params = learn_a_dynamic_signed_graph(X, 0.12, 0.85, **params)
+    w, params = learn_a_dynamic_signed_graph(X, 0.10, 0.75, **params)
     toc = time() - tic
     print(toc)
     w = np.array(w['+']) - np.array(w['-'])
@@ -33,4 +45,4 @@ if __name__ == "__main__":
         W[:, i * DIM:(i + 1) * DIM] = W_i + W_i.T
 
     df = pd.DataFrame(W)
-    df.to_csv('W_dynSGL_10_30.csv', index=False, header=False)
+    df.to_csv("W_dynSGL_{}_{}.csv".format(time_slots, seed), index=False, header=False)

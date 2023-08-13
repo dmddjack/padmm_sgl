@@ -74,3 +74,5 @@ end
 fval_admm = fval_iter(1:k);
 
 W = squareform(w);
+
+

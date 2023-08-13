@@ -1,4 +1,4 @@
-function [W, w] = dgl_cvx(X, alpha, beta, gamma, delta, T)
+function [W, w, fval_cvx] = dgl_cvx(X, alpha, beta, gamma, delta, T)
 
 % min_{w,v} 2*v'*w + beta*w'*w - alpha*ones'*log(v_1)+ gamma*|v_2|_{l1}
 % s.t.      Q_dw-v=0, w>=0
@@ -86,6 +86,6 @@ density_n = density_n / T;
 similarity = similarity / (T - 1);
 fprintf("density_p = %.4f, density_n = %.4f \nsimilarity = %.4f\n",density_p, density_n, similarity);
 
-
+fval_cvx = cvx_optval;
 
 

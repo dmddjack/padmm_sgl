@@ -4,3 +4,6 @@
 cvx
 __pycache__
 .idea
+*.jpg
+*.png
+data*

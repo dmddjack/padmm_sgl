@@ -1,10 +1,11 @@
-function [W, fval_admm, primal_gap_iter] = gl_admm(X, alpha, beta, delta, rho, tau1, tau2, max_iter, epsilon, W_opt)
+function [W, fval_admm, primal_gap_iter] = gl_admm_1(X, alpha, beta, delta, rho, tau1, tau2, max_iter, epsilon, W_opt)
 
 
 % min_{w,v} d'*w + beta*w'*w + alpha*||w||_1 + beta*v'*v
 % s.t.      [S;B]w-[v;delta]=0
 % 
 %% initialization
+
 DIM = size(X,1);
 DIMw = DIM*(DIM-1)/2;
 D = zeros(DIM,DIM);
@@ -30,7 +31,7 @@ one = ones(DIMw,1);
 y = randn(DIM+1,1);
 C = [S;one'];
 Ct = C';
-
+% CtC = Ct * C;
 fval_iter = zeros(max_iter,1);
 primal_res_iter = zeros(max_iter,1);
 dual_res_iter = zeros(max_iter,1);
@@ -40,9 +41,11 @@ for k = 1 : max_iter
     fval_iter(k) = d'*w + beta*(w'*w) + beta*((S*w)'*(S*w)) + alpha*norm(w,1); % commented when comparing runtime
     
     % update w
-    
+    % tic
     p = w - tau1*rho*Ct*(C*w - [v;delta] - y/rho);
+    % toc
     % w = (p-tau1*d)/(2*tau1*beta+1);
+    
     w = sign(p-tau1*d).*(max(abs(p-tau1*d)-tau1*alpha,0))/(2*tau1*beta+1);
     
     % update v
@@ -51,6 +54,7 @@ for k = 1 : max_iter
     y1 = y(1:DIM);
     
     q = (1-tau2*rho)*v + tau2*rho*Sw - tau2*y1;
+    
     % v1_tmp = q(1:DIMw);
     % v2_tmp = q(DIMw+1:DIMw+DIM);
     % v1 = ;
@@ -72,6 +76,11 @@ for k = 1 : max_iter
         break;
     end
 end
+
 fval_admm = fval_iter(1:k);
 
 W = squareform(w);
+% density_p = sum(w>1e-4)/max(size(w));
+% density_n = sum(w<-1e-4)/max(size(w));
+% disp(density_p);
+% disp(density_n);

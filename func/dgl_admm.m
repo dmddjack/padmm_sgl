@@ -122,25 +122,26 @@ end
 if k == max_iter
     fval_admm = fval_iter(max_iter);
 end
-
+fprintf('primal_gap_iter(%d)=%f',k,primal_res_iter(k));
+fprintf('dual_gap_iter(%d)=%f\n',k,dual_res_iter(k));
 W = cell(T,1);
 w_1 = w(1:DIMw);
 W{1} = squareform(w_1);
-density_p = sum(w_1>1e-4)/max(size(w_1));
-density_n = sum(w_1<-1e-4)/max(size(w_1));
-similarity = 0;
-w_last = w_1;
+% density_p = sum(w_1>1e-4)/max(size(w_1));
+% density_n = sum(w_1<-1e-4)/max(size(w_1));
+% similarity = 0;
+% w_last = w_1;
 
 for t=2:T
     w_t = w((t-1)*DIMw+1:t*DIMw);
     W{t} = squareform(w_t);
-    density_p = density_p + sum(w_t>1e-4)/max(size(w_t));
-    density_n = density_n + sum(w_t<-1e-4)/max(size(w_t));
-    corr = corrcoef(w_t,w_last);
-    similarity = similarity + corr(1,2);
-    w_last = w_t;
+    % density_p = density_p + sum(w_t>1e-4)/max(size(w_t));
+    % density_n = density_n + sum(w_t<-1e-4)/max(size(w_t));
+    % corr = corrcoef(w_t,w_last);
+    % similarity = similarity + corr(1,2);
+    % w_last = w_t;
 end
-density_p = density_p / T;
-density_n = density_n / T;
-similarity = similarity / (T - 1);
-fprintf("density_p = %.4f, density_n = %.4f \nsimilarity_admm = %.4f\n",density_p, density_n, similarity);
+% density_p = density_p / T;
+% density_n = density_n / T;
+% similarity = similarity / (T - 1);
+% fprintf("density_p = %.4f, density_n = %.4f \nsimilarity_admm = %.4f\n",density_p, density_n, similarity);

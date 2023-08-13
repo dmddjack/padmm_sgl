@@ -1,10 +1,11 @@
 clear;
 close all
-seed = 30;
+seed = 31;
 rng(seed);
-
+cvx = 0;
+SGL = 0;
 % generate a graph
-DIM = 20;
+DIM = 100;
 % [A,XCoords, YCoords] = construct_graph(DIM,'gaussian', 0.75, 0.5);
 [A,XCoords, YCoords] = construct_graph(DIM,'er',seed , 0.2);
 % [A,XCoords, YCoords] = construct_graph(DIM,'pa',1);
@@ -30,7 +31,6 @@ Ln = Dn-full(An);
 
 
 
-lambda = 1000;
 Lp = Lp/trace(Lp)*DIM;
 Ln = Ln/trace(Ln)*DIM;
 mid = round(DIM / 2);
@@ -86,37 +86,46 @@ end
 % disp(0.5 * sum(sum(Z.*A)));
 
 %% common parameters
-alpha = 1.8; % 1.8;
-beta = 1; % 3;
-delta = -4.5; % -1.5;
-max_iter = 1e3;
-epsilon = 1e-10;
+
+% DIM==100:
+alpha = .19; 
+beta = .8;
+delta = -6; 
+% DIM==20:
+% alpha = 2.2; 
+% beta = 3;
+% delta = -1; 
+
+max_iter = 1e5;
+epsilon = 1e-11;
 
 %% obtain optimal solution via ADMM solver
 fprintf('solving...\n');
-rho = 1;
-tau1 = 1e-4;
-tau2 = 1e-4;
+rho = .05;
+tau1 = 1/(rho*6000);
+tau2 = 1/rho;
 tic
-[W_opt] = gl_admm_solver(X_noisy, alpha, beta, delta, rho, tau1, tau2, 1e6, 1e-15);
+[W_opt] = gl_admm_solver(X_noisy, alpha, beta, delta, rho, tau1, tau2, 1e6, 1e-14);
 fprintf('solved!\n');
 toc
 % load('W_opt.mat')
 
-% %% CVX
-tic
-[W_cvx, ~] = gl_cvx(X_noisy, alpha, beta, delta); % run algorithm
-% [W_cvx, ~] = gl_cvx(X_noisy, alphap, alphan, betap, betan); % run algorithm
-cvx_time = toc;
-% S = (W_cvx>0.75)|(W_cvx<-0.75);
-% W_cvx = S.*W_cvx;
-D = diag(sum(full(W_cvx)));
-L_cvx = D-full(W_cvx);
-L_cvx(abs(L_cvx)<10^(-4))=0;
-[precision_cvx_p,recall_cvx_p,f_cvx_p,precision_cvx_n,recall_cvx_n,f_cvx_n,~] = graph_learning_perf_eval(L0,L_cvx);
-fval_cvx = 0.5*trace(W_cvx*Z); % + 0.5*beta*(norm(W_cvx,'fro'))^2;
-disp(density_p);
-disp(density_n);
+%% CVX
+if cvx
+    tic
+    [W_cvx, ~] = gl_cvx(X_noisy, alpha, beta, delta); % run algorithm
+    % [W_cvx, ~] = gl_cvx(X_noisy, alphap, alphan, betap, betan); % run algorithm
+    cvx_time = toc;
+    % S = (W_cvx>0.75)|(W_cvx<-0.75);
+    % W_cvx = S.*W_cvx;
+    D = diag(sum(full(W_cvx)));
+    L_cvx = D-full(W_cvx);
+    L_cvx(abs(L_cvx)<10^(-4))=0;
+    [precision_cvx_p,recall_cvx_p,f_cvx_p,precision_cvx_n,recall_cvx_n,f_cvx_n,~] = graph_learning_perf_eval(L0,L_cvx);
+    fval_cvx = 0.5*trace(W_cvx*Z); % + 0.5*beta*(norm(W_cvx,'fro'))^2;
+end
+% disp(density_p);
+% disp(density_n);
 %% PDS
 % tau = 0.9;
 % Z0 = 1/sqrt(alpha*beta)*Z;
@@ -129,10 +138,25 @@ disp(density_n);
 % fval_pds = trace(W_pds*Z) - alpha*sum(log(sum(W_pds,2))) + 0.5*beta*(norm(W_pds,'fro'))^2;
 % [precision_pds, recall_pds, Fmeasure_pds, NMI_pds, num_of_edges_pds] = graph_learning_perf_eval(L0,L_pds);
 
+%% SGL
+if SGL
+    if pyenv().Version == ""
+        pyenv(Version="C:\Users\dmddj.PRO13\.conda\envs\dynSGL\python.exe",ExecutionMode="OutOfProcess");
+    end
+    command = sprintf("SGL.py -s %d", seed);
+    SGL_time  = pyrunfile(command,'toc');
+    file_name = sprintf("W_SGL_%d.csv", seed);
+    W_SGL = readmatrix(file_name);    
+    D = diag(sum(full(W_SGL)));
+    L_SGL = D-full(W_SGL);
+    L_SGL(abs(L_SGL)<10^(-4))=0;
+    
+    [precision_SGL_p,recall_SGL_p,f_SGL_p,precision_SGL_n,recall_SGL_n,f_SGL_n,~] = graph_learning_perf_eval(L0,L_SGL);
+end
 %% ADMM
-rho = .1;
-tau1 = 50e-3;
-tau2 = 10;
+% rho = .01;
+% tau1 = 1/(rho*5148);
+% tau2 = 1/rho;
 tic
 [W_admm, fval_admm, primal_gap_iter_admm] = gl_admm_1(X_noisy, alpha, beta, delta, rho, tau1, tau2, max_iter, epsilon, W_opt);
 admm_time = toc;
@@ -165,17 +189,26 @@ L_admm(abs(L_admm)<10^(-4))=0;
 %% outputs
 % fprintf('alphap=%.2f, betap=%.2f\n', alphap, betap);
 % fprintf('alphan=%.2f, betan=%.2f\n', alphan, betan);
-fprintf('alpha=%.2f, beta=%.2f\n', alpha, beta);
-fprintf('----- CVX  Time needed is %f -----\n', cvx_time);
-% fprintf('----- PDS  Time needed is %f -----\n', stat_pds.time);
+fprintf('alpha=%.2f, beta=%.2f, delta=%.2f\n', alpha, beta, delta);
+if cvx
+    fprintf('----- CVX  Time needed is %f -----\n', cvx_time);
+end
+if SGL
+    fprintf('----- SGL  Time needed is %f -----\n', SGL_time);
+end
 fprintf('----- ADMM Time needed is %f -----\n', admm_time);
 % fprintf('----- FDPG Time needed is %f -----\n', fdpg_time);
 % fprintf('----- MM Time needed is %f -----\n', mm_time);
-
-fprintf('CVX               | fval_cvx=%f\n', fval_cvx);
-fprintf('CVX measurements  | precision_cvx_p=%f,recall_cvx_p=%f,f_cvx_p=%f\n                  | precision_cvx_n=%f,recall_cvx_n=%f,f_cvx_n=%f\n                  | f_cvx=%f\n\n' ...
-    ,precision_cvx_p,recall_cvx_p,f_cvx_p,precision_cvx_n,recall_cvx_n,f_cvx_n,0.5*(f_cvx_p+f_cvx_n));
-
+if cvx
+    fprintf('CVX               | fval_cvx=%f\n', fval_cvx);
+    fprintf('CVX measurements  | precision_cvx_p=%f,recall_cvx_p=%f,f_cvx_p=%f\n                  | precision_cvx_n=%f,recall_cvx_n=%f,f_cvx_n=%f\n                  | f_cvx=%f\n\n' ...
+       ,precision_cvx_p,recall_cvx_p,f_cvx_p,precision_cvx_n,recall_cvx_n,f_cvx_n,0.5*(f_cvx_p+f_cvx_n));
+end
+if SGL
+    % fprintf('SGL               | fval_SGL=%f\n', fval_SGL);
+    fprintf('SGL measurements  | precision_SGL_p=%f,recall_SGL_p=%f,f_SGL_p=%f\n                  | precision_SGL_n=%f,recall_SGL_n=%f,f_SGL_n=%f\n                  | f_SGL=%f\n\n' ...
+        ,precision_SGL_p,recall_SGL_p,f_SGL_p,precision_SGL_n,recall_SGL_n,f_SGL_n,0.5*(f_SGL_p+f_SGL_n));
+end
 % fprintf('PDS               | fval_pds=%f \n', fval_pds);
 % fprintf('PDS measurements  | Fmeasure_pds=%f, precision_pds=%f, recall_pds=%f, NMI_pds=%.4f\n\n', Fmeasure_pds, precision_pds, recall_pds, NMI_pds);
 % 
@@ -191,8 +224,15 @@ fprintf('ADMM measurements  | precision_admm_p=%f,recall_admm_p=%f,f_admm_p=%f\n
        
 % fprintf('num of edges: %f, %f, %f, %f\n\n', num_of_edges_pds, num_of_edges_admm, num_of_edges_fdpg, num_of_edges_mm)
 %% figures
+
 figure;
 semilogy(primal_gap_iter_admm,'-r','LineWidth',1.5);
+xlabel('iteration $k$','Interpreter','latex','FontSize',20);
+ylabel('{$\|w^k-w^*\|_2$}','Interpreter','latex','FontSize',20);
+lgd = legend('pADMM-SGL','location','northeast');
+lgd.FontSize = 14;
+beep on; beep;
+
 % hold on;
 % semilogy(primal_gap_iter_pds,'-b','LineWidth',1.5,'LineStyle',"--");
 % hold on;

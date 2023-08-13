@@ -1,4 +1,4 @@
-function [W] = gl_admm(X, alpha, beta, delta, rho, tau1, tau2, max_iter, epsilon)
+function [W] = gl_admm_solver(X, alpha, beta, delta, rho, tau1, tau2, max_iter, epsilon)
 
 
 % min_{w,v} d'*w + beta*w'*w + alpha*||w||_1 + beta*v'*v
@@ -70,5 +70,10 @@ for k = 1 : max_iter
         break;
     end
 end
-disp(k);
+% disp(k);
 W = squareform(w);
+
+density_p = sum(w>1e-4)/max(size(w));
+density_n = sum(w<-1e-4)/max(size(w));
+disp(density_p);
+disp(density_n);
