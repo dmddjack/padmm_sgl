@@ -1,10 +1,12 @@
 function [G, XCoords, YCoords] = construct_tvg(N,opt,seed,varargin1,varargin2,varargin3)
 % Graph construction
 % N num of nodes
-% varargin1 the probability of each edge p
+% varargin1 the probability of each edge p ('tver')/ the number of edges m per iteration ('tvpa')
 % varargin2 num of time slots
+% varargin3 num of resample
 
 %% check inputs
+rng(seed);
 if nargin == 5
     if strcmp(opt,'tver') || strcmp(opt,'lfer')
         error('number of input variables not correct :(')
@@ -16,15 +18,104 @@ plane_dim = 1;
 XCoords = plane_dim*rand(N,1);
 YCoords = plane_dim*rand(N,1);
 
+max_attempt = 10;
+G = cell(varargin2,1);
+
 %% construct the graph
+% base graph
 switch opt 
-    case 'tver', % Erdos-Renyi random graph with temporal homogeneity
+    case 'tver' % Erdos-Renyi random graph with temporal homogeneity
         p = varargin1;
-        G = tvg_tver(N,seed,varargin1,varargin2,varargin3);
-       
-    case 'lfer', % Erdos-Renyi random graph with switching behavior
+        G_1 = double(triu(rand(N)<p,1));
+        
+    case 'tvpa' % Preferential Attachment random graph with temporal homogeneity
         m = varargin1;
-        G = preferential_attachment_graph(N,m);
+        G_1 = preferential_attachment_graph(N,m);
+end
+
+[rindex,cindex] = find(G_1);
+% disp(rindex);
+% disp(cindex);
+G_1 = sparse(G_1);
+weights = rand(nnz(G_1),1);
+
+edge_count = nnz(G_1);
+% disp(count);
+sign_ = [ones(round(edge_count/2),1);-ones(edge_count-round(edge_count/2),1)];
+
+sign_ = sign_(randperm(edge_count));
+
+
+% disp(full(G_1));
+G_1((cindex - 1) * N + rindex) = sign_ .* weights;
+% disp(full(G_1));
+if ~all(conncomp(graph(G_1+G_1'))==1)
+    
+    G = NaN;
+    
+    error('G1 is not connected!');
+end
+
+G_1 = G_1+G_1';
+G{1} = G_1;
+% disp(full(G_1));
+
+% density_p = sum(sum(G{1}>1e-5));
+% density_n = sum(sum(G{1}<-1e-5));
+% disp(density_p);
+% disp(density_n);
+% num resample
+% disp(edge_count*varargin3/2);
+nr = ceil(edge_count*varargin3/2);
+% disp(nr);
+for t=2:varargin2
+    d = sum(full(G_1~=0));
+    % disp(t);
+    % disp(d);
+    for j=1:nr
+        % disp(j);
+        assert(all(d == sum(full(G_1~=0))));
+        for i=1:max_attempt
+            if i == max_attempt
+                disp('max attemp reached!')
+            end
+            index = randperm(edge_count,2);
+            r1 = rindex(index(1));
+            c1 = cindex(index(1));
+            r2 = rindex(index(2));
+            c2 = cindex(index(2));
+            % fprintf("r1 c1 r2 c2 = %d %d %d %d\n",r1, c1, r2, c2);
+            if r1 == r2 || r1 == c2 || c1 == r2 || c1 == c2
+                fprintf("duplicate node\n");
+                continue
+            end
+            if any(d([r1 c1 r2 c2]) < 2)
+                fprintf("node degree less than 2\n");
+                continue
+            end
+            if G_1((r2 - 1) * N + r1) == 0 && G_1((c2 - 1) * N + c1) == 0
+                cindex(index(1)) = r2;
+                rindex(index(2)) = c1;
+            elseif G_1((c2 - 1) * N + r1) == 0 && G_1((c1 - 1) * N + r2) == 0
+                cindex(index(1)) = c2;
+                cindex(index(2)) = c1;
+            else
+                fprintf("target edge is connected\n");
+                continue
+            end
+            % disp(weights);
+            weights(index) = rand(2,1);
+            % disp(weights);
+
+            G_1 = zeros(N);
+            G_1((cindex - 1) * N + rindex) = sign_ .* weights;
+            G_1 = sparse(G_1);
+            G_1 = G_1 + G_1';
+            break
+        end
+    end
+    G{t}=G_1;
+    % disp(G{t}-G{t-1});
 end
 
 %% plot the graph

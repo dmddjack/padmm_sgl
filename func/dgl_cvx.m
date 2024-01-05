@@ -52,7 +52,7 @@ end
 
 cvx_begin
 
-cvx_precision best
+cvx_precision default
 
 variable w(tp)
 

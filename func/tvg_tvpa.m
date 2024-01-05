@@ -1,4 +1,4 @@
-function [G, XCoords, YCoords] = tvg_tver(N, seed, varargin1,varargin2,varargin3)
+function [G, XCoords, YCoords] = tvg_tvpa(N, seed, varargin1,varargin2,varargin3)
 % Erdos-Renyi random graph with temporal homogeneity
 
 % Time-Varying Graph Learning
@@ -6,7 +6,7 @@ function [G, XCoords, YCoords] = tvg_tver(N, seed, varargin1,varargin2,varargin3
 
 % Graph construction
 % N num of nodes
-% varargin1 the probability of each edge p
+% varargin1 num of edge attachment per round
 % varargin2 num of time slots
 % varargin3 portion of resampling
 max_attempt = 10;
@@ -21,8 +21,8 @@ YCoords = plane_dim*rand(N,1);
 %% construct the graph
 
 % base graph
-p = varargin1;
-G_1= double(triu(rand(N)<p,1));
+m = varargin1;
+G_1 = preferential_attachment_graph(N,m);
 [rindex,cindex] = find(G_1);
 % disp(rindex);
 % disp(cindex);

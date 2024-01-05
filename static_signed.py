@@ -68,6 +68,7 @@ def _signed_graph(z, P, alpha1, alpha2, rho=10, max_iter=10000):
     objective_vals = []
 
     # ADMM iterations
+    
     for iter in range(max_iter):
 
         # v, w steps
@@ -123,7 +124,7 @@ def learn_a_static_signed_graph(X, density_pos, density_neg, **kwargs):
     alpha_pos = kwargs["alpha_pos"] if "alpha_pos" in kwargs else .1
     alpha_neg = kwargs["alpha_neg"] if "alpha_neg" in kwargs else .1
     rho = kwargs["rho"] if "rho" in kwargs else 1
-    max_iter = kwargs["max_iter"] if "max_iter" in kwargs else 1000
+    max_iter = kwargs["max_iter"] if "max_iter" in kwargs else 10000
 
     if density_pos == 0:
         alpha_pos = 0

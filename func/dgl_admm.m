@@ -57,8 +57,10 @@ end
 
 %% iterations
 w = zeros(tp,1);
-v = randn(tm+tp,1);
-y = randn(tm+tp+T,1);
+% v = randn(tm+tp,1);
+% y = randn(tm+tp+T,1);
+v = zeros(tm+tp,1);
+y = zeros(tm+tp+T,1);
 fval_iter = zeros(max_iter,1);
 primal_res_iter = zeros(max_iter,1); 
 dual_res_iter = zeros(max_iter,1);
@@ -113,8 +115,8 @@ for k = 1 : max_iter
     
     % stopping criterion
     if (primal_res_iter(k) < epsilon) && (dual_res_iter(k) < epsilon)
-        fprintf('primal_gap_iter(%d)=%f',k,primal_res_iter(k));
-        fprintf('dual_gap_iter(%d)=%f\n',k,dual_res_iter(k));
+        % fprintf('primal_gap_iter(%d)=%f',k,primal_res_iter(k));
+        % fprintf('dual_gap_iter(%d)=%f\n',k,dual_res_iter(k));
         fval_admm = fval_iter(k);
         break;
     end
@@ -122,8 +124,8 @@ end
 if k == max_iter
     fval_admm = fval_iter(max_iter);
 end
-fprintf('primal_gap_iter(%d)=%f',k,primal_res_iter(k));
-fprintf('dual_gap_iter(%d)=%f\n',k,dual_res_iter(k));
+% fprintf('primal_gap_iter(%d)=%f',k,primal_res_iter(k));
+% fprintf('dual_gap_iter(%d)=%f\n',k,dual_res_iter(k));
 W = cell(T,1);
 w_1 = w(1:DIMw);
 W{1} = squareform(w_1);

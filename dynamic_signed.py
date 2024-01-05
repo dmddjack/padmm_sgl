@@ -2,6 +2,7 @@ import numpy as np
 
 from numba import njit
 from scipy import sparse
+from time import time
 
 from sklearn.metrics import jaccard_score
 
@@ -164,11 +165,12 @@ def learn_a_dynamic_signed_graph(X, density, similarity, **kwargs):
     rng = np.random.default_rng()
 
     iter = 0
+    toc = 0
     while True:
         iter += 1
-
+        tic = time()
         w = _run(data_vecs, alpha, beta, S, rho, max_iter)
-
+        toc = time() - tic
         no_update = True
         view_densities = {"+": np.zeros(n_times), "-": np.zeros(n_times)}
         similarities = {"+": np.zeros(n_times-1), "-": np.zeros(n_times-1)}
@@ -236,4 +238,4 @@ def learn_a_dynamic_signed_graph(X, density, similarity, **kwargs):
         "beta": beta,
     }
 
-    return w, params
+    return w, params, toc

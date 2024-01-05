@@ -1,4 +1,4 @@
-function [W] = gl_admm_solver(X, alpha, beta, delta, rho, tau1, tau2, max_iter, epsilon)
+function [W, density_p, density_n] = gl_admm_solver(X, alpha, beta, delta, rho, tau1, tau2, max_iter, epsilon)
 
 
 % min_{w,v} d'*w + beta*w'*w + alpha*||w||_1 + beta*v'*v
@@ -61,7 +61,10 @@ for k = 1 : max_iter
     % suboptimality measurements
     primal_res_iter(k) = norm(C*w - [v;delta]);
     dual_res_iter(k) = norm(rho*St*(v-v_tmp));
-    
+    % if mod(k, 1000) == 0
+    %     disp(primal_res_iter(k));
+    %     disp(dual_res_iter(k));
+    % end
     
     % stopping criterion
     if (primal_res_iter(k) < epsilon) && (dual_res_iter(k) < epsilon)
@@ -75,5 +78,5 @@ W = squareform(w);
 
 density_p = sum(w>1e-4)/max(size(w));
 density_n = sum(w<-1e-4)/max(size(w));
-disp(density_p);
-disp(density_n);
+% disp(density_p);
+% disp(density_n);

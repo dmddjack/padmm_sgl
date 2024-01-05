@@ -1,4 +1,4 @@
-function [W,w] = dgl_admm_solver(X, alpha, beta, gamma, delta, rho, tau1, tau2, max_iter, epsilon, T)
+function [W,w,density_p,density_n,similarity] = dgl_admm_solver(X, alpha, beta, gamma, delta, rho, tau1, tau2, max_iter, epsilon, T)
 
 % min_{w,v} 2*v'*w + beta*w'*w - alpha*ones'*log(v_1)+ gamma*|v_2|_{l1}
 % s.t.      Q_dw-v=0, w>=0
@@ -57,8 +57,10 @@ end
 
 %% iterations
 w = zeros(tp,1);
-v = randn(tm+tp,1);
-y = randn(tm+tp+T,1);
+% v = randn(tm+tp,1);
+% y = randn(tm+tp+T,1);
+v = zeros(tm+tp,1);
+y = zeros(tm+tp+T,1);
 
 primal_res_iter = zeros(max_iter,1); 
 dual_res_iter = zeros(max_iter,1);
@@ -98,8 +100,8 @@ for k = 1 : max_iter
     
     % stopping criterion
     if (primal_res_iter(k) < epsilon) && (dual_res_iter(k) < epsilon)
-        fprintf('primal_gap_iter(%d)=%f',k,primal_res_iter(k));
-        fprintf('dual_gap_iter(%d)=%f\n',k,dual_res_iter(k));
+        % fprintf('primal_gap_iter(%d)=%f',k,primal_res_iter(k));
+        % fprintf('dual_gap_iter(%d)=%f\n',k,dual_res_iter(k));
         break;
     end
 end
@@ -124,4 +126,10 @@ end
 density_p = density_p / T;
 density_n = density_n / T;
 similarity = similarity / (T - 1);
-fprintf("\ndensity_p = %.4f, density_n = %.4f \nsimilarity_admm = %.4f\n\n",density_p, density_n, similarity);
+% fprintf("density_p\n")
+% disp(density_p)
+% fprintf("density_n\n")
+% disp(density_n)
+% fprintf("similarity\n")
+% disp(similarity)
+% fprintf("\ndensity_p = %.4f, density_n = %.4f \nsimilarity_admm = %.4f\n\n",density_p, density_n, similarity);

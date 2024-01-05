@@ -25,7 +25,7 @@ YCoords = plane_dim*rand(N,1);
 
 %% construct the graph
 switch opt
-    case 'gaussian', % random graph with Gaussian weights
+    case 'gaussian' % random graph with Gaussian weights
         T = varargin1; 
         s = varargin2;
         d = distanz([XCoords,YCoords]'); 
@@ -33,13 +33,9 @@ switch opt
         W(W<T) = 0; % Thresholding to have sparse matrix
         W = W-diag(diag(W));
 
-        
-
         count = nnz(W);
         % disp(count);
         sign_ = [ones(round(count/2),1);-ones(count-round(count/2),1)];
-        
-
         sign_ = sign_(randperm(count));
         disp(sum(sign_));
         tmp = zeros(size(W));
@@ -48,12 +44,12 @@ switch opt
         W = tmp + tmp';
 
         G = W-diag(diag(W));
-        disp(count);
+        % disp(count);
         
-    case 'er', % Erdos-Renyi random graph
+    case 'er' % Erdos-Renyi random graph
         p = varargin1;
         G = erdos_reyni(N,p);
-        count = nnz(G)
+        count = nnz(G);
 
         sign_ = [ones(round(count/2),1);-ones(count-round(count/2),1)];
         sign_ = sign_(randperm(count));
@@ -71,9 +67,26 @@ switch opt
         % S = S + S';
         % G = G.*S;
         
-    case 'pa', % scale-free graph with preferential attachment
+    case 'pa' % scale-free graph with preferential attachment
         m = varargin1;
         G = preferential_attachment_graph(N,m);
+        count = nnz(G);
+
+        sign_ = [ones(round(count/2),1);-ones(count-round(count/2),1)];
+        sign_ = sign_(randperm(count));
+        % disp(G(G>0));
+        
+        tmp = zeros(size(G));
+        tmp(G>0) = sign_ .* G(G>0);
+        G = tmp;
+        % disp(G);
+
+        G = G + G';
+        G = sparse(G);
+        % S = rand(N)*2-1;
+        % S = triu((S>0)-(S<0));
+        % S = S + S';
+        % G = G.*S;
         
     case 'ff', % forest-fire model
         p = varargin1;
@@ -91,7 +104,9 @@ if ~all(conncomp(graph(G))==1)
     
     G = NaN;
     
-    error('G is not connected!')
+    error('G is not connected!');
+
+    return;
 end
 
 
