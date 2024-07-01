@@ -1,9 +1,9 @@
-terminate(pyenv);
-opts = ["tvpa"];
+% terminate(pyenv);
+opts = ["tver"];
 % DIMs = [20, 50, 80, 100];
-DIMs = [50];
+DIMs = [20, 50];
 seeds = 114510:1:114559;
-% seeds = 114511:1:114512;
+%seeds = 114535:1:114552;
 NUM = 100;
 time_slots = 10;
 %opt = 'gaussian';
@@ -18,7 +18,7 @@ for opt = opts
             % delta = randn * .6 + -5.5; 
             % rho = randn * .005 + .05;
             fprintf('seed: %d\n', seed);
-            output = main_dgl(seed, DIM, NUM, time_slots, opt);
+            [output, ~] = main_dgl(seed, DIM, NUM, time_slots, opt);
             if ~isnan(output)
                 outputs(i, :) = [seed, output];
                 i = i + 1;

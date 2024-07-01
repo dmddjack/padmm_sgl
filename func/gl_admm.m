@@ -23,8 +23,8 @@ w_opt = squareform(W_opt)';
 % St = S';
 d = d / norm(d) * 100;
 %% iterations
-w = randn(DIMw,1);
-w = zeros(DIMw,1); %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+w = 10*randn(DIMw,1);
+% w = zeros(DIMw,1); %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 v = ones(DIM,1);
 one = ones(DIMw,1);
 y = ones(DIM+1,1);
@@ -37,7 +37,7 @@ dual_res_iter = zeros(max_iter,1);
 primal_gap_iter = zeros(max_iter,1);
 
 for k = 1 : max_iter
-    % fval_iter(k) = d'*w + beta*(w'*w) + beta*((S*w)'*(S*w)) + alpha*norm(w,1); % commented when comparing runtime
+    fval_iter(k) = d'*w + beta*(w'*w) + beta*((S*w)'*(S*w)) + alpha*norm(w,1); % commented when comparing runtime
     % update w
     % tic
     p = w - tau1*rho*Ct*(C*w - [v;delta] - y/rho);
@@ -65,7 +65,7 @@ for k = 1 : max_iter
     % suboptimality measurements
     primal_res_iter(k) = norm(C*w - [v;delta]);
     dual_res_iter(k) = norm(rho*St*(v-v_tmp));
-    % primal_gap_iter(k) = norm(w-w_opt); % commented when comparing runtime
+    primal_gap_iter(k) = norm(w-w_opt); % commented when comparing runtime
     
     % stopping criterion
     if (primal_res_iter(k) < epsilon) && (dual_res_iter(k) < epsilon)

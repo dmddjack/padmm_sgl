@@ -139,7 +139,7 @@ elseif DIM==20
     rho = .2;
     epsilon = 1e-6;
 end
-% epsilon = 1e-6;
+epsilon = 1e-12;
 max_iter = 1e5;
 
 
@@ -163,6 +163,7 @@ error_n = abs(density_n - .11);
 % f = 0.5*(f_opt_p+f_opt_n);
 dp_best = density_p;
 dn_best = density_n;
+W_opt_best = W_opt;
 for i = 1:max_try
     alpha = alpha_opt * (1 + 0.1*randn());
     beta = beta_opt * (1 + 0.1*randn());
@@ -183,6 +184,7 @@ for i = 1:max_try
         delta_opt = delta;
         error_p = error_new_p;
         error_n = error_new_n;
+        W_opt_best = W_opt;
         % f = f_new;
         dp_best = density_p;
         dn_best = density_n;
@@ -194,6 +196,7 @@ end
 alpha = alpha_opt;
 beta = beta_opt;
 delta = delta_opt;
+W_opt = W_opt_best;
 
 disp(dp_best);
 disp(dn_best);
@@ -246,8 +249,8 @@ if SGL
 end
 %% ADMM
 % rho = .01;
-% tau1 = 1/(rho*5148);
-% tau2 = 1/rho;
+tau1 = 1/(rho*(sqrt(2*(DIM-1))+sqrt(DIM*(DIM-1)/2))^2)*1;
+tau2 = 1/rho*1;
 tic
 [W_admm, fval_admm, primal_gap_iter_admm] = gl_admm(X_noisy, alpha, beta, delta, rho, tau1, tau2, max_iter, epsilon, W_opt);
 admm_time = toc;
@@ -309,10 +312,10 @@ fprintf('ADMM measurements  | precision_admm_p=%f,recall_admm_p=%f,f_admm_p=%f\n
 output = [cvx_time,SGL_time,admm_time,f_SGL_p,f_SGL_n,f_SGL,f_admm_p,f_admm_n,f_admm];
 %% figures
 
-% figure;
-% semilogy(primal_gap_iter_admm,'-r','LineWidth',1.5);
-% xlabel('iteration $k$','Interpreter','latex','FontSize',20);
-% ylabel('{$\|w^k-w^*\|_2$}','Interpreter','latex','FontSize',20);
-% lgd = legend('pADMM-SGL','location','northeast');
-% lgd.FontSize = 14;
+figure;
+semilogy(primal_gap_iter_admm,'-r','LineWidth',1.5);
+xlabel('iteration $k$','Interpreter','latex','FontSize',20);
+ylabel('{$\|w^k-w^*\|_2$}','Interpreter','latex','FontSize',20);
+lgd = legend('pADMM-SGL','location','northeast');
+lgd.FontSize = 14;
 % beep on; beep;

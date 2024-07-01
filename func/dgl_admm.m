@@ -74,7 +74,7 @@ primal_gap_iter = zeros(max_iter,1);
 for k = 1 : max_iter
     
     % added by wxl // commented when comparing runtime
-    primal_gap_iter(k) = norm(w-w_opt);
+    % primal_gap_iter(k) = norm(w-w_opt);
     
     % update w
     p = w - tau1*rho*C_2t*(C_2*w - [v;delta*one] - y/rho);
@@ -111,7 +111,7 @@ for k = 1 : max_iter
 %         end
 %     end
     
-    fval_iter(k) = (d'*w + alpha*(norm(w,1)) + beta*(w'*w + (B_1*w)'*(B_1*w)) + gamma*norm(B_2*w, 1)); % commented when comparing runtime
+    %fval_iter(k) = (d'*w + alpha*(norm(w,1)) + beta*(w'*w + (B_1*w)'*(B_1*w)) + gamma*norm(B_2*w, 1)); % commented when comparing runtime
     
     % stopping criterion
     if (primal_res_iter(k) < epsilon) && (dual_res_iter(k) < epsilon)

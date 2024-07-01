@@ -39,7 +39,12 @@ hn = hn / norm(hn, 'fro');
 mu = zeros(1,DIM);
 X = mvnrnd(mu, eye(DIM), NUM)';
 X = 0.5 * (Vp*hp*Vp'+Vn*hn*Vn')*X;
-
+%X = 2./(1+exp(-X))-1;
+%[val, indx] = max(X);
+%[val, indy] = max(val);
+%disp([indy, indx(indy)])
+%disp(val)
+%disp(sum(sum(X)));
 
 % gftcoeff = mvnrnd(mu,sigma,NUM);
 % X = V*gftcoeff';

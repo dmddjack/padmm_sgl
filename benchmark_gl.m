@@ -1,4 +1,4 @@
-terminate(pyenv);
+% terminate(pyenv);
 opts = ["gaussian", "er", "pa"];
 DIMs = [20, 50, 80, 100];
 % DIMs = [80];
